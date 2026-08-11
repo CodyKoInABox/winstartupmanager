@@ -1,0 +1,46 @@
+name: Bug report
+description: Report incorrect discovery, UI behavior, or a safe-control failure.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include secrets or private startup commands. Use the private security-reporting flow for vulnerabilities.
+  - type: input
+    id: version
+    attributes:
+      label: App version or commit
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows edition and build
+      placeholder: Windows 11 24H2, build …
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Startup source
+      options:
+        - Registry
+        - Startup folder
+        - Scheduled task
+        - Service
+        - UI / other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Include expected behavior and reproducible steps. Redact usernames and command arguments.
+    validations:
+      required: true
+  - type: textarea
+    id: warnings
+    attributes:
+      label: Relevant warning or log excerpt
+      description: Logs are under the local app data directory documented in the README.
+

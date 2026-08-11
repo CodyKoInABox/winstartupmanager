@@ -1,0 +1,60 @@
+[package]
+name = "win-startup-manager"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97.1"
+authors = ["Maruan Biasi El Achkar"]
+description = "A fast, transparent Windows startup application manager"
+license = "MIT"
+repository = "https://github.com/CodyKoInABox/winstartupmanager"
+readme = "README.md"
+keywords = ["windows", "startup", "autostart", "desktop", "egui"]
+categories = ["gui", "os::windows-apis"]
+
+[dependencies]
+atomic-write-file = "0.3.1"
+blake3 = "1.8.2"
+directories = "6.0.0"
+eframe = { version = "0.36.1", default-features = false, features = ["accesskit", "default_fonts", "persistence", "wgpu"] }
+egui_extras = { version = "0.36.1", default-features = false }
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.142"
+thiserror = "2.0.14"
+tracing = "0.1.41"
+tracing-appender = "0.2.3"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+
+[target.'cfg(windows)'.dependencies]
+is_elevated = "0.1.2"
+winreg = "0.56.0"
+windows = { version = "0.62.2", features = [
+    "Win32_Foundation",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Com",
+    "Win32_System_Ole",
+    "Win32_System_Services",
+    "Win32_System_TaskScheduler",
+    "Win32_System_Variant",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+tempfile = "3.20.0"
+
+[build-dependencies]
+ico = "0.5.0"
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+winresource = "0.1.31"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3
+strip = "symbols"
+
+[package.metadata.bundle]
+name = "Win Startup Manager"
+identifier = "dev.winstartupmanager.app"
+copyright = "Copyright (c) 2026 Maruan Biasi El Achkar"

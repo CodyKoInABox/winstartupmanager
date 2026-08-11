@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest a startup source, safety improvement, or UI enhancement.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: For a Windows source, include links to its documented enumeration and mutation APIs.
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety and recovery considerations
+

@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  portable:
+    name: Portable Windows package
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
+        with:
+          toolchain: 1.97.1
+
+      - name: Verify tag matches Cargo version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          $metadata = cargo metadata --no-deps --format-version 1 | ConvertFrom-Json
+          $version = ($metadata.packages | Where-Object name -eq 'win-startup-manager').version
+          if ($env:GITHUB_REF_NAME -ne "v$version") {
+            throw "Release tag $env:GITHUB_REF_NAME does not match Cargo version v$version"
+          }
+
+      - name: Install license generator
+        run: cargo install cargo-about --version 0.9.1 --locked --features cli
+
+      - name: Verify third-party notices
+        shell: pwsh
+        run: |
+          cargo about generate about.hbs --output-file THIRD-PARTY-LICENSES.html --frozen --fail
+          git diff --exit-code -- THIRD-PARTY-LICENSES.html
+
+      - name: Test
+        run: cargo test --all-targets --locked
+
+      - name: Build release executable
+        run: cargo build --release --locked
+
+      - name: Create portable archive and checksum
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME } else { 'dev' }
+          $package = "win-startup-manager-$version-windows-x86_64"
+          New-Item -ItemType Directory -Path "dist/$package" -Force | Out-Null
+          Copy-Item target/release/win-startup-manager.exe "dist/$package/Win Startup Manager.exe"
+          Copy-Item README.md, LICENSE, THIRD-PARTY-LICENSES.html, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md "dist/$package/"
+          Copy-Item assets "dist/$package/assets" -Recurse
+          Copy-Item docs "dist/$package/docs" -Recurse
+          Compress-Archive -Path "dist/$package" -DestinationPath "dist/$package.zip"
+          $hash = (Get-FileHash "dist/$package.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $package.zip" | Set-Content "dist/$package.zip.sha256" -Encoding ascii
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: win-startup-manager-windows-x86_64
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+
+      - name: Publish GitHub release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create $env:GITHUB_REF_NAME dist/*.zip dist/*.sha256 --generate-notes --verify-tag
